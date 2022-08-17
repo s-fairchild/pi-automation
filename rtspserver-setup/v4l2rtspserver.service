@@ -1,0 +1,14 @@
+[Unit]
+Description=V4L2 RTSP Server
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=15
+EnvironmentFile=/usr/local/etc/v4l2rtspserver.env
+ExecStart=/usr/local/bin/v4l2rtspserver $ARGS
+WorkingDirectory=/usr/local/share/v4l2rtspserver
+
+[Install]
+WantedBy=multi-user.target
