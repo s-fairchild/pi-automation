@@ -90,6 +90,6 @@
       ansible.builtin.systemd:
         name: v4l2rtspserver
         state: started
+        enabled: true
         daemon_reload: true
       tags: update-config
-
