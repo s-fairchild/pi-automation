@@ -32,6 +32,7 @@ populatePacmanKeys() {
     pacman-key --populate archlinuxarm
     # Update local cache
     pacman -Syy
+    pacman -Fy
     # Needed for ansible
     pacman -S --needed python
 }

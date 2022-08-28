@@ -1,0 +1,68 @@
+- name: Update packages, pacman config, and Install needed packages
+  hosts: rpi4
+  vars_files:
+    - env.yml
+  become: true
+  become_method: sudo
+  tasks:
+
+- name: Install packages and update
+  hosts: rpi4
+  become: true
+  tasks:
+  # TODO set hostname
+
+  # pacman -Syu
+  - name: Update all packages
+    community.general.pacman:
+      update_cache: yes
+      upgrade: yes
+    tags: update
+  
+  - name: Configure multiple downloads for pacman
+    ansible.builtin.blockinfile:
+      block: |
+        [options]
+        ParallelDownloads=1
+
+      path: /etc/pacman.conf
+      backup: true
+    tags: config
+      
+
+  - name: Install packages
+    community.general.pacman:
+      pkg:
+        - vim
+        - git
+        - bc
+        - python-pip
+        - gcc
+        - make
+        - base-devel
+        - i2c-tools
+        - bash-completion
+        - htop
+        - zram-generator
+        - cmake
+        - core/man
+        - pacman-contrib
+        - podman
+        - aardvark-dns
+        - btrfs-progs
+        - podman-docker
+        - raspberrypi-firmware
+        - screen
+        - wget
+        - community/apcupsd
+        - firewalld
+        - iotop
+        - smartmontools
+        - community/motion
+        - alsa-lib
+        - extra/alsa-utils
+        - extra/alsa-firmware
+      state: latest
+      extra_args: --noconfirm
+    tags: install
+      

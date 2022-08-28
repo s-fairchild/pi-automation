@@ -1,0 +1,83 @@
+- name: Secure fresh Arch Linux Arm Install
+  hosts: rpi4
+  vars_files:
+    - env.yml
+  become: true
+  become_method: su
+
+  tasks:
+    - name: Create user account
+      ansible.builtin.user:
+        name: "{{ user }}"
+        shell: '/bin/bash'
+        expires: -1
+        append: true
+        groups:
+          - wheel
+          - power
+          - audio
+          - tty
+          - video
+          # - i2c
+        generate_ssh_key: true
+    - name: Add authorized ssh key
+      ansible.posix.authorized_key:
+        user: steven
+        state: present
+        key: "{{ lookup('file', home + '/.ssh/id_rsa.pub') }}"
+    - name: Customize bash env
+      ansible.builtin.blockinfile:
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: 0644
+        block: |
+
+          export PATH="${PATH}:$HOME/.local/bin:$HOME/bin:/usr/local/go/bin"
+
+        path: "{{ user_home }}/.bash_profile"
+    - name: Customize bash profile
+      ansible.builtin.blockinfile:
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: 0644
+        block: |
+          PS1='[\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w \$\[\033[00m]\$ '
+          
+        path: "{{ user_home }}/.bash_profile"
+
+    - name: Install sudo
+      community.general.pacman:
+        update_cache: yes
+        pkg:
+          - sudo
+    
+    - name: Install sudoers file
+      ansible.builtin.copy:
+        mode: '600'
+        owner: root
+        group: root
+        content: "{{ user }} ALL=(ALL:ALL) NOPASSWD: ALL\n"
+        dest: "/etc/sudoers.d/{{ user }}_nopasswd"
+        force: true
+        validate: visudo -csf %s
+
+    # Switch logged in user from alarm to new user
+    - name: "switch to new user {{ user }}"
+      ansible.builtin.set_fact:
+        current_user: "{{ user }}"
+        ansible_user: "{{ user }}"
+
+    - name: Remove default alarm user
+      ansible.builtin.user:
+        name: alarm
+        state: absent
+        remove: true
+        force: true
+
+    - name: Disable and lock root password
+      ansible.builtin.user:
+        name: root
+        password: "!"
+        password_lock: true
+
+    

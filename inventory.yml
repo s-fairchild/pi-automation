@@ -1,0 +1,11 @@
+all:
+  hosts:
+    rpi4:
+    rpi3:
+    rpi0-livingroom:
+    archpis:
+      rpi4:
+    debianpis:
+      rpi3:
+      rpi0-livingroom:
+    
