@@ -62,6 +62,8 @@
         - alsa-lib
         - extra/alsa-utils
         - extra/alsa-firmware
+        # Needed for dig
+        - extra/bind
       state: latest
       extra_args: --noconfirm
     tags: install

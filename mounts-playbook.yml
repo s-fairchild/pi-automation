@@ -1,0 +1,15 @@
+- name: Mount disks needed for data storage
+  hosts: rpi4
+  vars:
+    data_dir: /data
+    # first disk in btrfs raid10 with 4 disks in 5 disk moba usb device
+    data_disc: "UUID=a46b9a52-ca9a-46fa-8e87-f5440f54a91e"
+  become: true
+
+  tasks:
+    - name: Add data Mount
+      ansible.posix.mount:
+        path: "{{ data_dir }}"
+        src: "{{ data_disc }}"
+        state: mounted
+        fstype: btrfs
