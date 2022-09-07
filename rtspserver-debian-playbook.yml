@@ -1,8 +1,8 @@
 - name: Setup v4l2rtspserver on Raspberry Pi OS
-  hosts: rpi3
+  hosts: "{{ host }}"
   vars:
     rtsp:
-      url: "{{ bedroom2 }}"
+      url: "{{ url }}"
   become: true
   become_user: root
   become_method: sudo
@@ -76,21 +76,21 @@
         path: /tmp/v4l2rtspserver
 
     # TODO update this with template module, create template file, update readme with required vars
-    # - name: Install custom v4l2rtspserver.service systemd unit
-    #   ansible.builtin.copy:
-    #     src: v4l2rtspserver.service
-    #     dest: /usr/lib/systemd/system/v4l2rtspserver.service
-    #     mode: 0644
-    #   tags: update-config
+    - name: Install v4l2rtspserver.service systemd unit
+      ansible.builtin.template:
+        src: templates/v4l2rtspserver/v4l2rtspserver.service.j2
+        dest: /usr/lib/systemd/system/v4l2rtspserver.service
+        mode: 0644
+      tags: update-config
 
     - name: Install v4l2rtspserver arguements to /usr/local/etc/v4l2rtspserver.env
       template:
-        src: templates/rtsp/v4l2rtspserver.env.j2
+        src: templates/v4l2rtspserver/v4l2rtspserver.env.j2
         dest: /usr/local/etc/v4l2rtspserver.env
         mode: 0644
       tags: update-config
 
-    - name: Enable v4l2rtspserver systemd unit
+    - name: Enable/Restart v4l2rtspserver systemd unit
       ansible.builtin.systemd:
         name: v4l2rtspserver
         state: restarted

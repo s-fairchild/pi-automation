@@ -12,8 +12,7 @@
       host: expresso
     rtsp3:
       port: 8554
-      # TODO update readme with required extra vars, update with usage for rtspserver-debian-playbook usage
-      name: "{{ bedroom2 }}"
+      name: "{{ rtsp3name }}"
       host: rpi3
       # Name for camera text and sub directory to save videos
     motion_server:
@@ -65,7 +64,7 @@
         state: directory
         mode: 0750
         owner: motion
-        group: motion
+        group: video
       tags: dirs
 
     - name: Create "{{ rtsp1.name }}" motion directory in /data/motion
@@ -74,7 +73,7 @@
         state: directory
         mode: 0750
         owner: motion
-        group: motion
+        group: video
       tags: dirs
 
     - name: Create "{{ rtsp2.name }}" motion directory in /data/motion
@@ -83,7 +82,7 @@
         state: directory
         mode: 0750
         owner: motion
-        group: motion
+        group: video
       tags: dirs
 
     - name: Create "{{ rtsp3.name }}" motion directory in /data/motion
@@ -92,7 +91,7 @@
         state: directory
         mode: 0750
         owner: motion
-        group: motion
+        group: video
       tags: dirs
 
     - name: Camera1 motion config

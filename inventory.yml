@@ -2,10 +2,10 @@ all:
   hosts:
     rpi4:
     rpi3:
-    rpi0-livingroom:
+    rpi0-frontdoor:
     archpis:
       rpi4:
     debianpis:
       rpi3:
-      rpi0-livingroom:
+      rpi0-frontdoor:
     
