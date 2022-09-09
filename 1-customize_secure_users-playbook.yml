@@ -1,11 +1,15 @@
 - name: Secure fresh Arch Linux Arm Install
   hosts: rpi4
   vars_files:
-    - env.yml
+    - group_vars/env.yml
   become: true
-  become_method: su
 
   tasks:
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: rpi4
+        use: systemd
+
     - name: Create user account
       ansible.builtin.user:
         name: "{{ user }}"
@@ -20,36 +24,78 @@
           - video
           # - i2c
         generate_ssh_key: true
-    - name: Add authorized ssh key
+
+    - name: Add authorized ssh key for "{{ user }}"
       ansible.posix.authorized_key:
-        user: steven
+        user: "{{ user }}"
         state: present
         key: "{{ lookup('file', home + '/.ssh/id_rsa.pub') }}"
-    - name: Customize bash env
+
+    - name: Customize set aliases for root
       ansible.builtin.blockinfile:
-        owner: "{{ user }}"
-        group: "{{ user }}"
+        path: /root/.bashrc
+        owner: root
+        group: root
         mode: 0644
+        create: true
         block: |
+          alias ls='ls --color=auto'
+          alias ll='ls -lhtr --color=auto'
+      tags: shell-env
 
-          export PATH="${PATH}:$HOME/.local/bin:$HOME/bin:/usr/local/go/bin"
-
-        path: "{{ user_home }}/.bash_profile"
-    - name: Customize bash profile
+    - name: Customize bash profile for root
       ansible.builtin.blockinfile:
+        path: /root/.bash_profile
+        owner: root
+        group: root
+        mode: 0644
+        create: true
+        block: |
+          # Get the aliases and functions
+          if [ -f ~/.bashrc ]; then
+              . ~/.bashrc
+          fi
+      tags: shell-env
+
+    - name: Remove old PS1 variable for "{{ user }}"
+      lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        regexp: '^PS1='
+        state: absent
+    
+    - name: Customize bash profile for "{{ user }}"
+      ansible.builtin.blockinfile:
+        path: "{{ user_home }}/.bash_profile"
         owner: "{{ user }}"
         group: "{{ user }}"
         mode: 0644
+        create: true
+        block: |
+          # Get the aliases and functions
+          if [ -f ~/.bashrc ]; then
+              . ~/.bashrc
+          fi
+      tags: shell-env
+
+    - name: Customize bash env for "{{ user }}"
+      ansible.builtin.blockinfile:
+        path: "{{ user_home }}/.bashrc"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: 0644
+        create: true
         block: |
           PS1='[\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w \$\[\033[00m]\$ '
-          
-        path: "{{ user_home }}/.bash_profile"
+          export PATH="${PATH}:$HOME/.local/bin:$HOME/bin:/usr/local/go/bin"
+          alias ll='ls -lhtr --color=auto'
+      tags: shell-env
 
     - name: Install sudo
       community.general.pacman:
         update_cache: yes
         pkg:
           - sudo
+        extra_args: --needed
     
     - name: Install sudoers file
       ansible.builtin.copy:
@@ -62,7 +108,7 @@
         validate: visudo -csf %s
 
     # Switch logged in user from alarm to new user
-    - name: "switch to new user {{ user }}"
+    - name: switch to new user "{{ user }}"
       ansible.builtin.set_fact:
         current_user: "{{ user }}"
         ansible_user: "{{ user }}"
