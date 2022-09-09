@@ -30,6 +30,21 @@
         user: "{{ user }}"
         state: present
         key: "{{ lookup('file', home + '/.ssh/id_rsa.pub') }}"
+      tags: ssh-config
+    
+    - name: Do not allow password authentication to ssh
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication '
+        insertafter: '^#PasswordAuthentication '
+        line: PasswordAuthentication no
+      tags: ssh-config
+    
+    - name: Restart sshd
+      service:
+        name: sshd
+        state: restarted
+      tags: ssh-config
 
     - name: Customize set aliases for root
       ansible.builtin.blockinfile:
