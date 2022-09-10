@@ -62,6 +62,7 @@
         - alsa-lib
         - extra/alsa-utils
         - extra/alsa-firmware
+        - extra/gptfdisk
         # Needed for dig
         - extra/bind
       state: latest

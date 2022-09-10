@@ -130,7 +130,8 @@ movie_max_time {{ motion_server.video_length }}
 movie_quality {{ motion_server.video_quality }}
 
 # Container/Codec to used for the movie. See motion_guide.html
-movie_codec mkv
+# mp4 uses H264 encoding with hardware accelartion on RPI VC4
+movie_codec mp4
 
 # File name(without extension) for movies relative to target directory
 movie_filename %t-%v-%Y-%m-%d-%H:%M:%S

@@ -116,6 +116,13 @@
           - alarm/firmware-raspberrypi
         extra_args: --needed
     
+    - name: Reinstall raspberrypi-bootloader raspberrypi-firmware removed by rpi-linux install
+      community.general.pacman:
+        update_cache: no
+        pkg:
+          - raspberrypi-bootloader
+          - raspberrypi-firmware
+    
     - name: Install sudoers file
       ansible.builtin.copy:
         mode: '600'
