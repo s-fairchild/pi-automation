@@ -8,14 +8,17 @@ Configure and manage Raspberry Pi headless servers
 
 [ArchLinuxArm Installation Guide](https://archlinuxarm.org/platforms/armv8/broadcom/raspberry-pi-4)
 
-- upstream aarch64 kernel
-- raspberry pi firmware
+- rpi-linux Raspberry Pi Foundation kernel and kernel headers
 - latest opensource software videocore driver
 - motion camera server accepting RTSP feeds
 - btrfs raid 10 for video files
 - Emby media server
 - PWM fan controlled via kernel driver
   - ICE Tower Fan in my case
+
+## First boot
+
+Run `first_boot_populate-pacman-keys.sh` directly on rpi via ssh or serial terminal to setup the alarm keys and install `python` to run playbooks.
 
 ## Running playbooks
 

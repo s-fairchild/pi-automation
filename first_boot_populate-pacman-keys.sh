@@ -34,7 +34,7 @@ populatePacmanKeys() {
     pacman -Syy
     pacman -Fy
     # Needed for ansible
-    pacman -S --needed python
+    pacman -S --needed --noconfirm python
 }
 
 main
