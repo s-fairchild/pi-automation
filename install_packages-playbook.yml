@@ -1,7 +1,7 @@
 - name: Update packages, pacman config, and Install needed packages
   hosts: rpi4
   vars_files:
-    - env.yml
+    - group_vars/env.yml
   become: true
   become_method: sudo
   tasks:
@@ -10,17 +10,9 @@
   hosts: rpi4
   become: true
   tasks:
-  # TODO set hostname
-
-  # pacman -Syu
-  - name: Update all packages
-    community.general.pacman:
-      update_cache: yes
-      upgrade: yes
-    tags: update
   
   - name: Configure multiple downloads for pacman
-    ansible.builtin.blockinfile:
+    blockinfile:
       block: |
         [options]
         ParallelDownloads=1
@@ -28,7 +20,12 @@
       path: /etc/pacman.conf
       backup: true
     tags: config
-      
+
+  - name: Update all packages
+    community.general.pacman:
+      update_cache: yes
+      upgrade: yes
+    tags: update
 
   - name: Install packages
     community.general.pacman:
@@ -66,6 +63,6 @@
         # Needed for dig
         - extra/bind
       state: latest
-      extra_args: --noconfirm
+      extra_args: --noconfirm --needed
     tags: install
       

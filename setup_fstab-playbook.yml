@@ -25,7 +25,7 @@
     
     - name: Create user backups directory
       file:
-        path: "/backups/deja/{{ hostname }}"
+        path: "/backups/deja/{{ backup_dir }}"
         state: directory
         owner: "{{ user }}"
         group: "{{ user }}"

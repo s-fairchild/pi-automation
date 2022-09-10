@@ -1,16 +1,17 @@
 # See /boot/overlays/README for all available options
 
-initramfs initramfs-linux.img followkernel
-start_x=1
+# Use with linux-rpi
+# initramfs initramfs-linux.img followkernel
+# start_x=1
+# display_auto_detect=1
+# camera_auto_detect=1
+
 # No audio disables audio for the HDMI ports only, not other sound cards e.g camera sound
 dtoverlay=vc4-kms-v3d-pi4,noaudio
 # dtoverlay=vc4-kms-v3d
 
 # Change as needed, more than is needed is not helpful
 gpu_mem=256
-
-display_auto_detect=1
-camera_auto_detect=1
 
 # Uncomment to enable bluetooth
 #dtparam=krnbt=on
@@ -20,6 +21,6 @@ arm_64bit=1
 
 enable_uart=1
 
-[pi4]
+# [pi4]
 # Run as fast as firmware / board allows
 arm_boost=1

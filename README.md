@@ -3,6 +3,12 @@
 ## Purpose
 
 Configure and manage Raspberry Pi headless servers
+Primarily this project helps me to
+
+- Deploy a fresh Arch Linux Arm aarch64 install on a Raspberry Pi 4
+  - Run motion server that collects rtsp feeds
+  - Saves motion videos from those feeds to `/data/motion` on a Mobus 5 disk USB linux software raid (either linux raid or btrfs multiple device)
+  - Deploy and modify the rtsp servers running raspbian at the moment. Arch Linux Arm dropped armv6 support unfortunately
 
 ## Arch Linux Arm
 
@@ -20,38 +26,90 @@ Configure and manage Raspberry Pi headless servers
 
 Run `first_boot_populate-pacman-keys.sh` directly on rpi via ssh or serial terminal to setup the alarm keys and install `python` to run playbooks.
 
+- Example to run from interactive ssh session
+
+```bash
+scp first_boot_populate-pacman-keys.sh alarm@<ipaddress>:
+ssh alarm@<ipaddress>
+su -c ./first_boot_populate-pacman-keys.sh
+```
+
+- Example to run script remotely
+
+```bash
+scp first_boot_populate-pacman-keys.sh alarm@<ipaddress>:
+# Quickly enter root password: root
+# Note the password will be shown in terminal
+ssh alarm@rpi4 'bash -s su -c' < first_boot_populate-pacman-keys.sh
+```
+
 ## Running playbooks
 
-- First boot setup for Arch Linux Arm host
+### First boot setup for Arch Linux Arm host
+
 - Enter the default alarm(alarm) password, then root(root) password when prompted
 
 ```bash
-ansible-playbook -u alarm --become-method su -k -K -i inventory.yml 1-customize_secure_users_playbook.yml
+ansible-playbook 1-customize_secure_users-playbook.yml -u alarm -k -K --become-method su
 ```
 
+### Next Install packages with `install_packages-playbook.yml`
+
+- extra var `backup_dir` is required to create the backup subfolder. I'm using my controller hostname that I'll be backing up from
+
+```bash
+ansible-playbook setup_fstab-playbook.yml -e "backup_dir=$(hostname)"
+```
+
+### Add mounts to fstab with `setup_fstab-playbook.yml`
+
+```bash
+ansible-playbook setup_fstab-playbook.yml
+```
+
+### Configure Motion Server
+
+- the 3rd rtsp name requires an extra variable
+  - This will be modified later, I've hardcoded the first 3 names but they all need to be customizable
+
+```bash
+ansible-playbook motion_server_config-playbook.yml -e "rtsp3name=<your server name>"
+```
+
+### Other usage examples
+
 - Running setup a second time after the alarm user has been removed
-  - Use `--become-method sudo` now that root user has been locked
   - Don't use `-u alarm -k -K` now that we have an ssh key for authentication and password-less sudo for our current user
 
 ```bash
-ansible-playbook --become-method sudo -i inventory.yml 1-customize_secure_users_playbook.yml
+ansible-playbook 1-customize_secure_users_playbook.yml
 ```
 
 - Update shell env files only
   - use shell-env tag with `-t shell-env`
 
 ```bash
-ansible-playbook 1-customize_secure_users_playbook.yml --become-method sudo -i inventory.yml -t shell-env
+ansible-playbook 1-customize_secure_users_playbook.yml -t shell-env
 ```
 
 - Setup rtsp server host
 
 ```bash
-ansible-playbook rtspserver-debian-playbook.yml -i inventory.yml -e "host=rpi3" -e "url=my_rtspserver_url"
+ansible-playbook rtspserver-debian-playbook.yml -e "host=rpi3" -e "url=my_rtspserver_url"
 ```
 
 - Update configuration only
 
 ```bash
-ansible-playbook rtspserver-debian-playbook.yml -i inventory.yml -e "host=rpi3" -e "url=my_rtspserver_url" -t update-config
+ansible-playbook rtspserver-debian-playbook.yml -e "host=rpi3" -e "url=my_rtspserver_url" -t update-config
 ```
+
+## TODO Items
+
+- Setup firewalld playbook
+- Cleanup variable placements
+  - Set common configurable options in `env.yml` for others to replace when using this project
+- Set all rtsp server names to variables
+  - Configure more or less rtsp servers to be specified using a loop
+- Collect mount UUIDs from host rather than hardcoding
+- Switch `config.txt` to j2 template for customization when installing rpi kernel
