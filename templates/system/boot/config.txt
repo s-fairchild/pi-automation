@@ -21,6 +21,9 @@ arm_64bit=1
 
 enable_uart=1
 
+# PWM fan control
+dtoverlay=gpio-fan,gpiopin=18,temp=55000
+
 # [pi4]
 # Run as fast as firmware / board allows
 arm_boost=1

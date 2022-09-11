@@ -113,3 +113,5 @@ ansible-playbook rtspserver-debian-playbook.yml -e "host=rpi3" -e "url=my_rtspse
   - Configure more or less rtsp servers to be specified using a loop
 - Collect mount UUIDs from host rather than hardcoding
 - Switch `config.txt` to j2 template for customization when installing rpi kernel
+- Configure /dev/vchiq with permissions: `crw-rw---- 1 root video 10, 125 Aug  9 23:29 /dev/vchiq` to allow video group to run `vcgencmd`
+- Create systemd one shot service to run `tvservice -o` for less power usage by disabling HDMI interface
