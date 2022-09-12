@@ -1,0 +1,1 @@
+KERNEL=="vchiq" SUBSYSTEM=="misc",GROUP="video",MODE="0660"

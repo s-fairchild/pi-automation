@@ -56,7 +56,7 @@
         owner: root
         group: root
         force: true
-      tags: motionconf
+      tags: motion-conf
 
     - name: Create primary motion directory /data/motion
       ansible.builtin.file:
@@ -129,4 +129,4 @@
         name: motion
         state: restarted
         enabled: true
-      tags: service cameras motionconf
+      tags: service cameras motion-conf

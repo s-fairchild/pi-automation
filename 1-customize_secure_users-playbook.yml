@@ -135,6 +135,8 @@
         state: directory
         mode: '0700'
 
+    ### Low level hardware setup begin
+
     # Creates a backup regardless of file difference to the custom installed config files
     # Using this rather than backup: true because FAT32 doesn't support the backup filename of copy module
     - name: Backup config.txt
@@ -143,7 +145,16 @@
         cmd: |
           cp /boot/config.txt config.txt_"$(date +%F-%T)"~
           chmod 0640 ./*.txt*~
-      tags: config-txt
+      tags: hw-config
+
+    - name: Allow video group to access vchiq (video core)
+      copy:
+        src: templates/system/udev/rules.d/10-vchiq-permissions.rules
+        dest: /etc/udev/rules.d/10-vchiq-permissions.rules
+        owner: root
+        group: root
+        mode: '0622'
+      tags: hw-config
 
     - name: Install customized config.txt
       copy:
@@ -151,7 +162,9 @@
         dest: /boot/config.txt
         owner: root
         group: root
-      tags: config-txt
+      tags: hw-config
+
+    ### Low level hardware setup end
 
     - name: Do not allow password authentication to ssh
       lineinfile:
