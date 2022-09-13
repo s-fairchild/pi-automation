@@ -1,14 +1,7 @@
 - name: Update packages, pacman config, and Install needed packages
   hosts: rpi4
-  vars_files:
-    - group_vars/env.yml
   become: true
   become_method: sudo
-  tasks:
-
-- name: Install packages and update
-  hosts: rpi4
-  become: true
   tasks:
   
   - name: Configure multiple downloads for pacman
@@ -32,6 +25,7 @@
       pkg:
         - vim
         - rsync
+        - mdadm
         - inetutils
         - git
         - bc
@@ -67,4 +61,24 @@
       state: latest
       extra_args: --noconfirm --needed
     tags: install
-      
+
+- name: Install util scripts
+  hosts: rpi4
+  vars_files:
+    - group_vars/env.yml
+
+  tasks:
+    - name: Create ~/bin
+      file:
+        state: directory
+        dest: "{{ user_home }}/bin"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+      tags: utils
+
+    - name: Install shell scripts in ~/bin
+      copy:
+        src: "{{ item }}"
+        dest: "{{ user_home }}/bin"
+      with_fileglob: "templates/utils/*.sh"
+      tags: utils
