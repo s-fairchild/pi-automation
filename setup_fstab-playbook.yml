@@ -2,10 +2,10 @@
   hosts: rpi4
   vars:
     data_dir: /data
-    backups_dir: /backups
+    backup_dir: /backups
     # first disk in btrfs raid10 with 4 disks in 5 disk moba usb device
-    data_disc: "UUID=a46b9a52-ca9a-46fa-8e87-f5440f54a91e"
-    backups_disc: "UUID=1847d7c9-17e7-4863-a1f7-f17aa06de7ff"
+    data_disk: "UUID=9289fc29-6950-4a03-bc28-3f43acd2cbb6"
+    backup_disk: "UUID=1847d7c9-17e7-4863-a1f7-f17aa06de7ff"
   vars_files:
     - group_vars/env.yml
   become: true
@@ -22,7 +22,7 @@
         path: /backups/deja
         state: directory
         mode: '755'
-    
+
     - name: Create user backups directory
       file:
         path: "/backups/deja/{{ backup_dir }}"
@@ -33,12 +33,14 @@
     - name: Add data Mount
       ansible.posix.mount:
         path: "{{ data_dir }}"
-        src: "{{ data_disc }}"
+        src: "{{ data_disk }}"
         state: mounted
         fstype: btrfs
+        opts: defaults,nofail
     - name: Add backup mount
       ansible.posix.mount:
-        path: "{{ backups_dir }}"
-        src: "{{ backups_disc }}"
+        path: "{{ backup_dir }}"
+        src: "{{ backup_disk }}"
         state: mounted
         fstype: btrfs
+        opts: defaults,nofail
