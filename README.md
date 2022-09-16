@@ -5,10 +5,29 @@
 Configure and manage Raspberry Pi headless servers
 Primarily this project helps me to
 
-- Deploy a fresh Arch Linux Arm aarch64 install on a Raspberry Pi 4
+- Deploy a fresh aarch64 install on a Raspberry Pi 4
   - Run motion server that collects rtsp feeds
   - Saves motion videos from those feeds to `/data/motion` on a Mobus 5 disk USB linux software raid (either linux raid or btrfs multiple device)
   - Deploy and modify the rtsp servers running raspbian at the moment. Arch Linux Arm dropped armv6 support unfortunately
+
+## Fedora Server 37
+
+Install image to sdcard with `arm-image-installer`
+
+Update `sdcard="sdx"` with your device
+
+```bash
+sdcard="/dev/sdx"
+sudo arm-image-installer --image=Fedora-Server-37_Beta-1.5.aarch64.raw.xz \
+  --target=rpi4 \
+  --media="$sdcard" \
+  --norootpass \
+  --resizefs \
+  --showboot \
+  --args "coherent_pool=6M smsc95xx.turbo_mode=N" \
+  --addkey ~/.ssh/id_rsa.pub \
+  --addconsole
+```
 
 ## Arch Linux Arm
 
@@ -17,10 +36,11 @@ Primarily this project helps me to
 - rpi-linux Raspberry Pi Foundation kernel and kernel headers
 - latest opensource software videocore driver
 - motion camera server accepting RTSP feeds
-- btrfs raid 10 for video files
+- External usb storage for `/data` directory. Mine is configured as a Linux software raid5 with 1 hotspare
+- External drive for `/backup` to backup raid array to, within the same Mobus storage enclosure as raid 5
 - Emby media server
-- PWM fan controlled via kernel driver
-  - ICE Tower Fan in my case
+- PWM fan controlled via [my software driver written in Go](https://github.com/s-fairchild/pwmfan-go)
+  - ICE Tower Fan
 
 ## First boot
 
