@@ -1,7 +1,6 @@
 - name: Update packages, pacman config, and Install needed packages
   hosts: rpi4
   become: true
-  become_method: sudo
   tasks:
   
   - name: Configure multiple downloads for pacman
@@ -13,14 +12,16 @@
       path: /etc/pacman.conf
       backup: true
     tags: config
+    when: ansible_distribution == 'Arch Linux'
 
-  - name: Update all packages
+  - name: Update Arch Linux packages
     community.general.pacman:
       update_cache: yes
       upgrade: yes
     tags: update
+    when: ansible_distribution == 'Arch Linux'
 
-  - name: Install packages
+  - name: Install Arch Linux packages
     community.general.pacman:
       pkg:
         - vim
@@ -60,7 +61,46 @@
         - extra/bind
       state: latest
       extra_args: --noconfirm --needed
-    tags: install
+    tags: alarm
+    when: ansible_distribution == 'Arch Linux'
+
+  - name: Install rpm fusion free
+    dnf:
+      name: "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_distribution_major_version }}.noarch.rpm"
+      state: present
+      disable_gpg_check: true
+    when: ansible_distribution  == 'Fedora'
+
+  - name: Install Fedora packages
+    dnf:
+      name:
+        # General Utilities
+        - vim
+        - rsync
+        - mdadm
+        - git
+        - cmake
+        - make
+        - bc
+        - podman
+        - iotop
+        - htop
+        - smartmontools
+        # Sound packages
+        - alsa-firmware
+        - alsa-lib
+        - alsa-lib-devel
+        - alsa-plugins-usbstream
+        - alsa-plugins-pulseaudio
+        - alsa-plugins-samplerate
+        - alsa-plugins-upmix
+        - alsa-tools
+        - alsa-tools-firmware
+        - motion
+        - '@Development tools' 
+        - motion
+      state: latest
+    when: ansible_distribution  == 'Fedora'
 
 - name: Install util scripts
   hosts: rpi4

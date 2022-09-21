@@ -14,9 +14,10 @@
         name: "*"
         state: latest
       tags: update-pkgs
+      when: ansible_distribution == 'Raspian'
 
     - name: Install required packages and tools
-      ansible.builtin.apt:
+      apt:
         pkg:
           # Debian 11 podman v3 is too old to build this Dockerfile
           - libv4l-0
@@ -47,14 +48,16 @@
           - alsa-tools
           - alsa-utils
       tags: install-pkgs
+      when: ansible_distribution == 'Raspian'
 
     - name: Remove unused dependencies
-      ansible.builtin.apt:
+      apt:
         autoremove: true
       tags: update-pkgs install-pkgs
+      when: ansible_distribution == 'Raspian'
 
     - name: Git clone github.com/mpromonet/v4l2rtspserver
-      ansible.builtin.git:
+      git:
         repo: https://github.com/mpromonet/v4l2rtspserver.git
         dest: /tmp/v4l2rtspserver
         clone: true
@@ -62,22 +65,22 @@
         version: v0.3.3
 
     - name: Build v4l2rtspserver from source and install
-      ansible.builtin.shell: cmake . && make -j"$(nproc)" && make install
+      shell: cmake . && make -j"$(nproc)" && make install
       args:
         chdir: /tmp/v4l2rtspserver
       register: build_output
       changed_when: false
 
-    - ansible.builtin.debug: var=build_output.stdout_lines
+    - debug: var=build_output.stdout_lines
 
     - name: Remove /tmp/v4l2rtspserver
-      ansible.builtin.file:
+      file:
         state: absent
         path: /tmp/v4l2rtspserver
 
     # TODO update this with template module, create template file, update readme with required vars
     - name: Install v4l2rtspserver.service systemd unit
-      ansible.builtin.template:
+      template:
         src: templates/v4l2rtspserver/v4l2rtspserver.service.j2
         dest: /usr/lib/systemd/system/v4l2rtspserver.service
         mode: 0644
@@ -91,7 +94,7 @@
       tags: update-config
 
     - name: Enable/Restart v4l2rtspserver systemd unit
-      ansible.builtin.systemd:
+      systemd:
         name: v4l2rtspserver
         state: restarted
         enabled: true
