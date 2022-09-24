@@ -1,7 +1,13 @@
 - name: Update packages, pacman config, and Install needed packages
   hosts: rpi4
+  vars_files:
+    - group_vars/common_pkgs.yml
   become: true
   tasks:
+
+  - name: Print Distribution name
+    debug:
+      msg: Distribution "{{ ansible_distribution }}"
   
   - name: Configure multiple downloads for pacman
     blockinfile:
@@ -21,15 +27,17 @@
     tags: update
     when: ansible_distribution == 'Arch Linux'
 
+  - name: Insall common Arch Linux packages
+    community.general.pacman:
+      pkg: "{{ pkgs }}"
+      state: latest
+      extra_args: --noconfirm --needed
+
   - name: Install Arch Linux packages
     community.general.pacman:
       pkg:
-        - vim
-        - rsync
-        - mdadm
         - inetutils
         - git
-        - bc
         - python-pip
         - gcc
         - make
@@ -41,17 +49,11 @@
         - cmake
         - core/man
         - pacman-contrib
-        - podman
         - aardvark-dns
         - btrfs-progs
-        - podman-docker
         - raspberrypi-firmware
-        - screen
-        - wget
         - community/apcupsd
         - firewalld
-        - iotop
-        - smartmontools
         - community/motion
         - alsa-lib
         - extra/alsa-utils
@@ -74,18 +76,6 @@
   - name: Install Fedora packages
     dnf:
       name:
-        # General Utilities
-        - vim
-        - rsync
-        - mdadm
-        - git
-        - cmake
-        - make
-        - bc
-        - podman
-        - iotop
-        - htop
-        - smartmontools
         # Sound packages
         - alsa-firmware
         - alsa-lib
@@ -99,8 +89,22 @@
         - motion
         - '@Development tools' 
         - motion
+        # General Utilities
       state: latest
     when: ansible_distribution  == 'Fedora'
+  
+  - name: Install common Fedora packages
+    dnf:
+      name: "{{ pkgs }}"
+      state: latest
+    when: ansible_distribution  == 'Fedora'
+  
+  - name: Install dev packages
+    dnf:
+      name: "{{ dev_pkgs }}"
+      state: latest
+    when: ansible_distribution  == 'Fedora'
+  
 
 - name: Install util scripts
   hosts: rpi4
