@@ -1,0 +1,18 @@
+pkgs: 
+  - vim
+  - rsync
+  - mdadm
+  - bc
+  - podman
+  - iotop
+  - htop
+  - smartmontools
+  - wget
+  - screen
+  - podman-docker
+dev_pkgs:
+  - gcc-arm-linux-gnu
+  - gcc-c++
+  - cmake
+  - make
+  - git
