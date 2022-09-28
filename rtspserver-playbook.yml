@@ -4,10 +4,12 @@
     rtsp:
       url: "{{ url }}"
   become: true
-  become_user: root
-  become_method: sudo
 
   tasks:
+    - name: Print Distribution name
+      debug:
+        msg: Distribution "{{ ansible_distribution }}"
+
     - name: Update apt cache then update all packages
       ansible.builtin.apt:
         update_cache: true
@@ -23,12 +25,12 @@
           - libv4l-0
           - libasound2
           - libasound2-plugin-equal
-          # - liblivemedia77
+          - libssl-dev
           - liblog4cpp5v5
-          - libasound2
           - libssl1.1
           - alsa-firmware-loaders
           - ca-certificates
+          - liblivemedia-dev
           # Packages required for building from source
           - libasound2-dev
           - liblog4cpp5v5
@@ -85,6 +87,13 @@
         dest: /usr/lib/systemd/system/v4l2rtspserver.service
         mode: 0644
       tags: update-config
+    
+    - name: Install udev rules for usb cameras
+      template:
+        src: templates/system/udev/99-usb-cam.rules.j2
+        dest: /etc/udev/rules.d/99-usb-cam.rules
+        mode: 0644
+      tags: update-config
 
     - name: Install v4l2rtspserver arguements to /usr/local/etc/v4l2rtspserver.env
       template:
@@ -100,3 +109,7 @@
         enabled: true
         daemon_reload: true
       tags: update-config
+
+      # TODO find a way to script turning mic capture on for camera device
+      # amixer -c 0 cset numid=2 1
+      # amixer cset numid=3 53
