@@ -124,6 +124,14 @@ ansible-playbook rtspserver-debian-playbook.yml -e "host=rpi3" -e "url=my_rtspse
 ansible-playbook rtspserver-debian-playbook.yml -e "host=rpi3" -e "url=my_rtspserver_url" -t update-config
 ```
 
+## How to's
+
+enable early firmware UART
+
+```bash
+sed -i -e "s/BOOT_UART=0/BOOT_UART=1/" bootcode.bin
+```
+
 ## TODO Items
 
 - Setup firewalld playbook

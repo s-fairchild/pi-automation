@@ -56,9 +56,14 @@
         - firewalld
         - community/motion
         - alsa-lib
+        - extra/alsa-card-profiles
+        - extra/alsa-plugins
         - extra/alsa-utils
         - extra/alsa-firmware
+        - live-media
         - extra/gptfdisk
+        - extra/pulseaudio-alsa
+        - extra/lsof
         # Needed for dig
         - extra/bind
       state: latest

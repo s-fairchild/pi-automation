@@ -78,7 +78,7 @@
         path: "{{ user_home }}/.bashrc"
         regexp: '^PS1='
         state: absent
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     ### Arch Linux Setup ###
 
@@ -95,7 +95,7 @@
               . ~/.bashrc
           fi
       tags: shell-env
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Customize bash env for "{{ user }}"
       blockinfile:
@@ -109,7 +109,7 @@
           export PATH="${PATH}:$HOME/.local/bin:$HOME/bin:/usr/local/go/bin"
           alias ll='ls -lhtr --color=auto'
       tags: shell-env
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Install sudo
       community.general.pacman:
@@ -117,7 +117,7 @@
         pkg:
           - sudo
         extra_args: --needed
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Create sudoers.d
       file:
@@ -126,7 +126,7 @@
         group: root
         mode: '750'
         path: /etc/sudoers.d/
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Install sudoers file
       template:
@@ -137,7 +137,7 @@
         group: root
         force: true
         validate: visudo -csf %s
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     # Switch logged in user from alarm to new user
     - name: switch to new user "{{ user }}"
@@ -145,6 +145,7 @@
         current_user: "{{ user }}"
         ansible_user: "{{ user }}"
       when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Remove default alarm user
       user:
@@ -153,6 +154,7 @@
         remove: true
         force: true
       when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     ### Low level hardware setup begin
 
@@ -164,7 +166,7 @@
         path: /root/boot_backup
         state: directory
         mode: '0700'
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Backup config.txt
       shell:
@@ -173,7 +175,7 @@
           cp /boot/config.txt config.txt_"$(date +%F-%T)"~
           chmod 0640 ./*.txt*~
       tags: hw-config
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Backup cmdline.txt
       shell:
@@ -181,7 +183,7 @@
         cmd: |
           cp /boot/cmdline.txt cmdline.txt_"$(date +%F-%T)"~
           chmod 0640 ./*.txt*~
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Allow video group to access vchiq (video core)
       copy:
@@ -191,7 +193,7 @@
         group: root
         mode: '0622'
       tags: hw-config
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
 
     - name: Install config.txt
       copy:
@@ -200,7 +202,7 @@
         owner: root
         group: root
       tags: hw-config
-      when: ansible_distribution == 'Arch Linux'
+      when: ansible_distribution == 'Archlinux'
     
     - name: Install cmdline.txt
       copy:
@@ -209,8 +211,8 @@
         owner: root
         group: root
       tags: hw-config
-      when: ansible_distribution == 'Arch Linux'
-
+      when: ansible_distribution == 'Archlinux'
+    
     ### Low level hardware setup end
 
     - name: Do not allow password authentication to ssh
