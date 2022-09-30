@@ -64,6 +64,7 @@
         - extra/gptfdisk
         - extra/pulseaudio-alsa
         - extra/lsof
+        - usbutils
         # Needed for dig
         - extra/bind
       state: latest
