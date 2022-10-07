@@ -6,8 +6,8 @@ After=dev-video0.device
 
 [Service]
 Type=simple
-Restart=on-failure
-RestartSec=30s
+Restart=always
+RestartSec=30
 EnvironmentFile=/usr/local/etc/v4l2rtspserver.env
 ExecStart=/usr/local/bin/v4l2rtspserver "$ARGS"
 WorkingDirectory=/usr/local/share/v4l2rtspserver
