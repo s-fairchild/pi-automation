@@ -4,6 +4,7 @@ passwd:
   # TODO setup users for sftp and nfs
   groups:
     - name: backups
+    # - name: video
   users:
     - name: core
       ssh_authorized_keys:
@@ -14,7 +15,6 @@ passwd:
       groups:
         - backups
     - name: motion
-      uid: 2000
       home_dir: /var/data/motion
       no_create_home: true
       system: true
@@ -159,6 +159,12 @@ storage:
           nameserver 127.0.0.1
           nameserver 8.8.8.8
           nameserver 8.8.4.4
+    
+    # Ensure usb camera is added for v4l2rtspserver
+    - path: /etc/udev/rules.d/99-usb-cam.rules
+      contents:
+        inline: |
+          KERNEL=="video[0-9]*", ACTION=="add", SUBSYSTEM=="video4linux", SUBSYSTEMS=="usb", ATTR{index}=="0", ATTRS{idVendor}=="32e4", ATTRS{idProduct}=="9310", GROUP="video", SYMLINK+="usb-cam0", TAG+="systemd", ENV{SYSTEMD_WANTS}="v4l2rtspserver.service"
 
     # User configs
     - path: /etc/profile.d/zz-default-editor.sh
@@ -202,9 +208,11 @@ storage:
           0
       target: /etc/resolv.conf.local-dns
 
-
 systemd:
   units:
+    - name: firewalld.service
+      enabled: true
+
     # TODO remove autologin after testing
     - name: serial-getty@ttyS0.service
       dropins:
@@ -237,7 +245,7 @@ systemd:
         ExecStartPre=/bin/podman pull docker.io/linuxserver/emby:latest
         ExecStart=/bin/podman run --name=emby \
             -v emby_config:/config \
-            -v /var/data/emby:/mnt/ \
+            -v /var/data/emby:/mnt/:Z \
             -p 8096:8096 \
             -e UID=1002 \
             -e GID=1002 \
@@ -267,7 +275,7 @@ systemd:
         ExecStart=/bin/podman run --name=motion \
             -e TZ="America/New_York" \
             -v /usr/local/etc/motion:/usr/local/etc/motion \
-            -v /var/data/motion:/var/lib/motion \
+            -v /var/data/motion:/var/lib/motion:Z \
             docker.io/motionproject/motion:latest
         ExecStop=/bin/podman stop motion
 
@@ -294,8 +302,8 @@ systemd:
         ExecStartPre=-/bin/podman pull docker.io/pihole/pihole:latest
         ExecStart=/bin/podman run --name pihole \
             -e TZ="America/New_York" \
-            -v etc-pihole:/etc/pihole \
-            -v etc-dnsmasq.d:/etc/dnsmasq.d \
+            -v pihole-etc:/etc/pihole \
+            -v pihole-dnsmasq.d:/etc/dnsmasq.d \
             -v pihole-log:/var/log \
             --dns=127.0.0.1 \
             --dns=1.1.1.1 \
@@ -319,8 +327,8 @@ systemd:
         [Unit]
         Description=V4L2 RTSP Server
         After=network.target
-        # BindsTo=dev-video0.device
-        # After=dev-video0.device
+        BindsTo=dev-video0.device
+        After=dev-video0.device
 
         [Service]
         Type=simple
@@ -333,7 +341,7 @@ systemd:
             --device=/dev/video0 \
             -p 8554:8554 \
             docker.io/mpromonet/v4l2rtspserver:latest-amd64 \
-            -S1 -R home -U user:274eb4670d7c687b787554b53ca27bae -C1 -A48000 -aS16_LE -u dustins_room /dev/usb-cam0,front:CARD=Camera
+            -S1 -R home -U user:274eb4670d7c687b787554b53ca27bae -C1 -A48000 -aS16_LE -u dustins_room
         [Install]
         WantedBy=multi-user.target
 
@@ -345,7 +353,7 @@ systemd:
       # added to the root image in a future Fedora CoreOS release as it will
       # prevent the service from failing.
       # Restart policy is to try again later if another rpm-ostree deployment is active
-    - name: rpm-ostree-install-admins-tools.service
+    - name: rpm-ostree-install-pkgs.service
       enabled: true
       contents: |
         [Unit]
