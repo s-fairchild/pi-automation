@@ -1,0 +1,368 @@
+variant: fcos
+version: 1.4.0
+passwd:
+  # TODO setup users for sftp and nfs
+  groups:
+    - name: backups
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBJ0MSYF8SY9eZoGKe1rhPvrm58FiMxQMJf69WEeBUTn steve51516@gmail.com
+    - name: deja
+      ssh_authorized_keys:
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBJ0MSYF8SY9eZoGKe1rhPvrm58FiMxQMJf69WEeBUTn steve51516@gmail.com
+      groups:
+        - backups
+    - name: motion
+      uid: 2000
+      home_dir: /var/data/motion
+      no_create_home: true
+      system: true
+      gecos: Motion Camera System Account
+      # groups:
+        # - video
+    - name: emby
+    - name: pihole
+storage:
+  # TODO double check this before testing on hardware
+  disks:
+    # - device: /dev/disk/by-id/wwn-0x5000c500c8e4bd14
+    - device: /dev/vdb
+      wipe_table: true
+      partitions:
+        - label: raid5.1
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    # - device: /dev/disk/by-id/wwn-0x5000c500c937816a
+    - device: /dev/vdc
+      wipe_table: true
+      partitions:
+        - label: raid5.2
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    # - device: /dev/disk/by-id/wwn-0x5000c500c8e196b3
+    - device: /dev/vdd
+      wipe_table: true
+      partitions:
+        - label: raid5.3
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    # - device: /dev/disk/by-id/wwn-0x5000c500c8e37087
+    - device: /dev/vde
+      wipe_table: true
+      partitions:
+        - label: raid5.4
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    # - device: /dev/disk/by-id/wwn-0x5000c500c8a40802
+    - device: /dev/vdf
+      wipe_table: true
+      partitions:
+        - label: raid5.5
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+  raid:
+    - name: data
+      level: raid5
+      devices:
+        - /dev/disk/by-partlabel/raid5.1
+        - /dev/disk/by-partlabel/raid5.2
+        - /dev/disk/by-partlabel/raid5.3
+        - /dev/disk/by-partlabel/raid5.4
+        - /dev/disk/by-partlabel/raid5.5
+      spares: 1
+      # See the md wiki for chunk size info
+      # https://raid.wiki.kernel.org/index.php/RAID_setup#Chunk_sizes
+      options:
+        - --chunk
+        - 128K
+  filesystems:
+    - path: /var/data
+      device: /dev/md/data
+      format: xfs
+      label: data
+      # https://raid.wiki.kernel.org/index.php/RAID_setup#XFS
+      # options:
+        # - su=128k
+        # - sw=3
+      with_mount_unit: true
+    # - path: /var/lib/containers/volumes
+      # device: /var/data/containers/volumes
+      # mount_options: --bind
+      # with_mount_unit: true
+  directories:
+    - path: /var/data/motion
+      user: 
+        name: motion
+      group: 
+        name: motion
+    - path: /var/data/motion/frontdoor
+      user: 
+        name: motion
+      group: 
+        name: motion
+    - path: /var/data/motion/dustins_room
+      user: 
+        name: motion
+      group: 
+        name: motion
+    - path: /var/data/motion/driveway
+      user: 
+        name: motion
+      group: 
+        name: motion
+    - path: /var/data/emby
+      user:
+        name: emby
+      group:
+        name: emby
+    - path: /var/data/emby/stuff
+      user:
+        name: emby
+      group:
+        name: emby
+    - path: /var/data/deja/r10
+      user:
+        name: deja
+      group:
+        name: deja
+
+  files:
+    # System config
+    - path: /etc/hostname
+      mode: 0644
+      contents:
+        inline: |
+          kore
+
+    - path: /etc/systemd/zram-generator.conf
+      mode: 0644
+      contents:
+        inline: |
+          # This config file enables a /dev/zram0 device with the default settings
+          [zram0]
+
+    - path: /etc/resolv.conf.local-dns
+      overwrite: true
+      contents:
+        inline: |
+          nameserver 127.0.0.1
+          nameserver 8.8.8.8
+          nameserver 8.8.4.4
+
+    # User configs
+    - path: /etc/profile.d/zz-default-editor.sh
+      overwrite: true
+      contents:
+        inline: |
+          export EDITOR=vim
+
+    # App configs
+    - path: /usr/local/etc/motion/motion.conf
+      overwrite: true
+      contents:
+        local: fcos/motion/motion.conf
+      mode: 0644
+
+    - path: /usr/local/etc/motion/camera1.conf
+      overwrite: true
+      contents:
+        local: fcos/motion/camera1.conf
+      mode: 0644
+
+    - path: /usr/local/etc/motion/camera2.conf
+      overwrite: true
+      contents:
+        local: fcos/motion/camera2.conf
+      mode: 0644
+
+    - path: /usr/local/etc/motion/camera3.conf
+      overwrite: true
+      contents:
+        local: fcos/motion/camera3.conf
+      mode: 0644
+
+  links:
+    - path: /etc/resolv.conf
+      overwrite: true
+      user:
+        id: 0
+      group:
+        id:
+          0
+      target: /etc/resolv.conf.local-dns
+
+
+systemd:
+  units:
+    # TODO remove autologin after testing
+    - name: serial-getty@ttyS0.service
+      dropins:
+      - name: autologin-core.conf
+        contents: |
+          [Service]
+          # Override Execstart in main unit
+          ExecStart=
+          # Add new Execstart with `-` prefix to ignore failure
+          ExecStart=-/usr/sbin/agetty --autologin core --noclear %I $TERM
+          TTYVTDisallocate=no
+
+    - name: emby.service
+      enabled: true
+            # TODO add this device when installing to hardware
+            # --device /dev/dri:/dev/dri \
+      contents: |
+        [Unit]
+        Description=Emby Media Server
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=Simple
+        TimeoutStartSec=0
+        RestartSec=30
+        Restart=on-failure
+        ExecStartPre=-/bin/podman kill emby
+        ExecStartPre=-/bin/podman rm emby
+        ExecStartPre=/bin/podman pull docker.io/linuxserver/emby:latest
+        ExecStart=/bin/podman run --name=emby \
+            -v emby_config:/config \
+            -v /var/data/emby:/mnt/ \
+            -p 8096:8096 \
+            -e UID=1002 \
+            -e GID=1002 \
+            -e GIDLIST=100 \
+            docker.io/linuxserver/emby:latest
+        ExecStop=/bin/podman stop emby
+
+        [Install]
+        WantedBy=multi-user.target
+    
+    - name: motion.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Motion Video Server
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=Simple
+        TimeoutStartSec=0
+        RestartSec=30
+        Restart=on-failure
+        ExecStartPre=-/bin/podman kill motion
+        ExecStartPre=-/bin/podman rm motion
+        ExecStartPre=/bin/podman pull docker.io/motionproject/motion
+        ExecStart=/bin/podman run --name=motion \
+            -e TZ="America/New_York" \
+            -v /usr/local/etc/motion:/usr/local/etc/motion \
+            -v /var/data/motion:/var/lib/motion \
+            docker.io/motionproject/motion:latest
+        ExecStop=/bin/podman stop motion
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: systemd-resolved.service
+      enabled: false
+    
+    - name: pihole.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Pihole DNS Server
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=Simple
+        TimeoutStartSec=0
+        Restart=on-failure
+        ExecStartPre=-/bin/podman kill pihole
+        ExecStartPre=-/bin/podman rm pihole
+        ExecStartPre=-/bin/podman pull docker.io/pihole/pihole:latest
+        ExecStart=/bin/podman run --name pihole \
+            -e TZ="America/New_York" \
+            -v etc-pihole:/etc/pihole \
+            -v etc-dnsmasq.d:/etc/dnsmasq.d \
+            -v pihole-log:/var/log \
+            --dns=127.0.0.1 \
+            --dns=1.1.1.1 \
+            --hostname pi.hole \
+            -e VIRTUAL_HOST=pi.hole \
+            -e PROXY_LOCATION=pi.hole \
+            -e ServerIP=10.50.0.1 \
+            -p 53:53/udp \
+            -p 53:53/tcp \
+            -p 8080:80 \
+            docker.io/pihole/pihole:latest
+        ExecStop=/bin/podman stop pihole
+
+        [Install]
+        WantedBy=multi-user.target
+  
+    - name: v4l2rtspserver.service
+      enabled: true
+      # TODO uncomment binds to when installing on hardware
+      contents: |
+        [Unit]
+        Description=V4L2 RTSP Server
+        After=network.target
+        # BindsTo=dev-video0.device
+        # After=dev-video0.device
+
+        [Service]
+        Type=simple
+        Restart=always
+        RestartSec=30
+        ExecStartPre=-/bin/podman kill v4l2rtspserver
+        ExecStartPre=-/bin/podman rm v4l2rtspserver
+        ExecStartPre=-/bin/podman pull docker.io/mpromonet/v4l2rtspserver:latest-amd64
+        ExecStart=podman run --name v4l2rtspserver \
+            --device=/dev/video0 \
+            -p 8554:8554 \
+            docker.io/mpromonet/v4l2rtspserver:latest-amd64 \
+            -S1 -R home -U user:274eb4670d7c687b787554b53ca27bae -C1 -A48000 -aS16_LE -u dustins_room /dev/usb-cam0,front:CARD=Camera
+        [Install]
+        WantedBy=multi-user.target
+
+      # Install admin tools
+      # `--allow-inactive` ensures that rpm-ostree does not return an error
+      # We run before `zincati.service` to avoid conflicting rpm-ostree
+      # transactions.
+      # if the package is already installed. This is useful if the package is
+      # added to the root image in a future Fedora CoreOS release as it will
+      # prevent the service from failing.
+      # Restart policy is to try again later if another rpm-ostree deployment is active
+    - name: rpm-ostree-install-admins-tools.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer vim with rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        Restart=on-failure
+        RestartSec=60
+        ExecStart=/usr/bin/rpm-ostree install -y --apply-live --allow-inactive \
+            vim htop
+        ExecStart=/bin/touch /var/lib/%N.stamp
+
+        [Install]
+        WantedBy=multi-user.target
