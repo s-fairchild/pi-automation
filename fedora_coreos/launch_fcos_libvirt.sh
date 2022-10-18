@@ -19,6 +19,7 @@ sudo chown qemu: "$IGNITION_CONFIG"
 
 virt-install --connect="qemu:///system" --name="${VM_NAME}" --vcpus="${VCPUS}" --memory="${RAM_MB}" \
         --os-variant="fedora-coreos-$STREAM" --import --graphics=none \
+        --tpm backend.type=emulator,backend.version=2.0,model=tpm-tis \
         --disk="size=${DISK_GB},backing_store=${IMAGE}" \
         --disk="size=${RAID_DISK_GB}" \
         --disk="size=${RAID_DISK_GB}" \

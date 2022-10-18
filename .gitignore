@@ -1,1 +1,3 @@
 .vscode/
+container_secrets/
+*.ign

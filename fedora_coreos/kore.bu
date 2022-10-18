@@ -25,6 +25,13 @@ passwd:
     - name: pihole
 storage:
   # TODO double check this before testing on hardware
+  luks:
+  - name: root
+    label: luks-root
+    device: /dev/disk/by-partlabel/root
+    clevis:
+      tpm2: true
+    wipe_volume: true
   disks:
     # - device: /dev/disk/by-id/wwn-0x5000c500c8e4bd14
     - device: /dev/vdb
@@ -96,10 +103,11 @@ storage:
         # - su=128k
         # - sw=3
       with_mount_unit: true
-    # - path: /var/lib/containers/volumes
-      # device: /var/data/containers/volumes
-      # mount_options: --bind
-      # with_mount_unit: true
+    - device: /dev/mapper/root
+      format: btrfs
+      wipe_filesystem: true
+      label: root
+
   directories:
     - path: /var/data/motion
       user: 
@@ -136,6 +144,11 @@ storage:
         name: deja
       group:
         name: deja
+    - path: /var/container_secrets
+      user:
+        name: root
+      group:
+        name: root
 
   files:
     # System config
@@ -160,7 +173,42 @@ storage:
           nameserver 8.8.8.8
           nameserver 8.8.4.4
     
-    # Ensure usb camera is added for v4l2rtspserver
+    - path: /var/container_secrets/v4l2rtspserver
+      overwrite: true
+      contents:
+        local: container_secrets/v4l2rtspserver
+    - path: /var/container_secrets/pihole
+      overwrite: true
+      contents:
+        local: container_secrets/pihole
+    - path: /var/container_secrets/motion_camera1
+      overwrite: true
+      contents:
+        local: container_secrets/motion_camera1
+    - path: /var/container_secrets/motion_camera2
+      overwrite: true
+      contents:
+        local: container_secrets/motion_camera2
+    - path: /var/container_secrets/motion_camera3
+      overwrite: true
+      contents:
+        local: container_secrets/motion_camera3
+    
+    # Used by podman-secrets.service
+    - path: /usr/local/bin/create_podman_secrets.sh
+      overwrite: true
+      mode: 0700
+      contents:
+        local: bin/create_podman_secrets.sh
+    
+    # Used by motion to copy secrets into temp config
+    - path: /usr/local/bin/motion_config_editor.sh
+      overwrite: true
+      mode: 0700
+      contents:
+        local: bin/motion_config_editor.sh
+
+    # Ensure ELP usb camera is added for v4l2rtspserver
     - path: /etc/udev/rules.d/99-usb-cam.rules
       contents:
         inline: |
@@ -177,25 +225,25 @@ storage:
     - path: /usr/local/etc/motion/motion.conf
       overwrite: true
       contents:
-        local: fcos/motion/motion.conf
+        local: motion/motion.conf
       mode: 0644
 
     - path: /usr/local/etc/motion/camera1.conf
       overwrite: true
       contents:
-        local: fcos/motion/camera1.conf
+        local: motion/camera1.conf
       mode: 0644
 
     - path: /usr/local/etc/motion/camera2.conf
       overwrite: true
       contents:
-        local: fcos/motion/camera2.conf
+        local: motion/camera2.conf
       mode: 0644
 
     - path: /usr/local/etc/motion/camera3.conf
       overwrite: true
       contents:
-        local: fcos/motion/camera3.conf
+        local: motion/camera3.conf
       mode: 0644
 
   links:
@@ -224,6 +272,23 @@ systemd:
           # Add new Execstart with `-` prefix to ignore failure
           ExecStart=-/usr/sbin/agetty --autologin core --noclear %I $TERM
           TTYVTDisallocate=no
+    
+    # ExecStartPost=rm /var/container_secrets/v4l2rtspserver
+    - name: podman-secrets.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Create podman secrets
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=Oneshot
+        # ExecStart=bash -c 'if podman secret create v4l2rtspserver /var/container_secrets/v4l2rtspserver; then shred -zu /var/container_secrets/v4l2rtspserver; else return 1; fi'
+        ExecStart=/usr/local/bin/create_podman_secrets.sh
+
+        [Install]
+        WantedBy=multi-user.target
 
     - name: emby.service
       enabled: true
@@ -272,12 +337,24 @@ systemd:
         ExecStartPre=-/bin/podman kill motion
         ExecStartPre=-/bin/podman rm motion
         ExecStartPre=/bin/podman pull docker.io/motionproject/motion
+        ExecStartPre=/bin/podman pull docker.io/bash:5.2.2
+        ExecStartPre=/bin/podman run --rm \
+            --name motion-config-editor \
+            --secret motion_camera1,type=env \
+            --secret motion_camera2,type=env \
+            --secret motion_camera3,type=env \
+            -v /var/usrlocal/etc/motion:/mnt/motion:Z \
+            -v motion_config:/mnt/temp_config \
+            -v /var/usrlocal/bin/motion_config_editor.sh:/bin/motion_config_editor.sh:Z \
+            docker.io/bash:5.2.2 bash /bin/motion_config_editor.sh
+
         ExecStart=/bin/podman run --name=motion \
             -e TZ="America/New_York" \
-            -v /usr/local/etc/motion:/usr/local/etc/motion \
+            -v motion_config:/usr/local/etc/motion \
             -v /var/data/motion:/var/lib/motion:Z \
             docker.io/motionproject/motion:latest
         ExecStop=/bin/podman stop motion
+        ExecStopPost=/bin/podman volume rm motion_config
 
         [Install]
         WantedBy=multi-user.target
@@ -301,6 +378,8 @@ systemd:
         ExecStartPre=-/bin/podman rm pihole
         ExecStartPre=-/bin/podman pull docker.io/pihole/pihole:latest
         ExecStart=/bin/podman run --name pihole \
+            --secret pihole,type=env,target=ADMIN_PASSWORD \
+            -e WEBPASSWORD="${ADMIN_PASSWORD}" \
             -e TZ="America/New_York" \
             -v pihole-etc:/etc/pihole \
             -v pihole-dnsmasq.d:/etc/dnsmasq.d \
@@ -338,10 +417,14 @@ systemd:
         ExecStartPre=-/bin/podman rm v4l2rtspserver
         ExecStartPre=-/bin/podman pull docker.io/mpromonet/v4l2rtspserver:latest-amd64
         ExecStart=podman run --name v4l2rtspserver \
+            --secret v4l2rtspserver,type=env,target=SECRET \
             --device=/dev/video0 \
             -p 8554:8554 \
             docker.io/mpromonet/v4l2rtspserver:latest-amd64 \
-            -S1 -R home -U user:274eb4670d7c687b787554b53ca27bae -C1 -A48000 -aS16_LE -u dustins_room
+            -S1 \
+            -R home -U user:"${SECRET}" \
+            -C1 -A48000 -aS16_LE \
+            -u dustins_room
         [Install]
         WantedBy=multi-user.target
 
