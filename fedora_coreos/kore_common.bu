@@ -1,5 +1,8 @@
 variant: fcos
 version: 1.4.0
+boot_device:
+  luks:
+    tpm2: true
 passwd:
   # TODO setup users for sftp and nfs
   groups:
@@ -31,6 +34,10 @@ storage:
     clevis:
       tpm2: true
     wipe_volume: true
+  - name: data
+    device: /dev/md/data
+    clevis:
+      tpm2: true
   raid:
     - name: data
       level: raid5
@@ -48,7 +55,7 @@ storage:
         - 128K
   filesystems:
     - path: /var/data
-      device: /dev/md/data
+      device: /dev/mapper/data
       format: xfs
       label: data
       # https://raid.wiki.kernel.org/index.php/RAID_setup#XFS
@@ -131,6 +138,10 @@ storage:
       overwrite: true
       contents:
         local: container_secrets/v4l2rtspserver
+    - path: /var/container_secrets/v4l2rtspserver_url
+      overwrite: true
+      contents:
+        local: container_secrets/v4l2rtspserver_url
     - path: /var/container_secrets/pihole
       overwrite: true
       contents:
@@ -234,7 +245,6 @@ systemd:
           ExecStart=-/usr/sbin/agetty --autologin core --noclear %I $TERM
           TTYVTDisallocate=no
     
-    # ExecStartPost=rm /var/container_secrets/v4l2rtspserver
     - name: podman-secrets.service
       enabled: true
       contents: |
@@ -386,36 +396,7 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
-  
-    - name: v4l2rtspserver.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=V4L2 RTSP Server
-        After=network.target
-        BindsTo=dev-video0.device
-        After=dev-video0.device
 
-        [Service]
-        Type=simple
-        Restart=always
-        RestartSec=30
-        ExecStartPre=-/bin/podman kill v4l2rtspserver
-        ExecStartPre=-/bin/podman rm v4l2rtspserver
-        ExecStartPre=-/bin/podman pull docker.io/mpromonet/v4l2rtspserver:latest-amd64
-        ExecStart=podman run --name v4l2rtspserver \
-            --secret v4l2rtspserver,type=env,target=SECRET \
-            --device=/dev/video0 \
-            -p 8554:8554 \
-            docker.io/mpromonet/v4l2rtspserver:latest-amd64 \
-            -S1 \
-            -R home -U user:"${SECRET}" \
-            -C1 -A48000 -aS16_LE \
-            -u dustins_room
-        [Install]
-
-        WantedBy=multi-user.target
-      
     - name: unbound.service
       enabled: true
       contents: |
@@ -436,7 +417,39 @@ systemd:
         
         [Install]
         WantedBy=multi-user.target
+  
+    - name: v4l2rtspserver.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=V4L2 RTSP Server
+        After=network.target
+        BindsTo=dev-video0.device
+        After=dev-video0.device
 
+        [Service]
+        Type=simple
+        Restart=always
+        RestartSec=30
+        ExecStartPre=-/bin/podman kill v4l2rtspserver
+        ExecStartPre=-/bin/podman rm v4l2rtspserver
+        ExecStartPre=-/bin/podman pull docker.io/mpromonet/v4l2rtspserver:latest-amd64
+        ExecStart=podman run --name v4l2rtspserver \
+            --secret v4l2rtspserver,type=env,target=SECRET \
+            --secret v4l2rtspserver_url,type=env,target=URL \
+            --device=/dev/video0 \
+            -p 8554:8554 \
+            docker.io/mpromonet/v4l2rtspserver:latest-amd64 \
+            -S1 \
+            -R home -U user:"${SECRET}" \
+            -C1 -A48000 -aS16_LE \
+            -u "${URL}"
+
+        [Install]
+        WantedBy=multi-user.target
+    
+    # TODO setup graylog with podman-compose
+      
       # Install admin tools
       # `--allow-inactive` ensures that rpm-ostree does not return an error
       # We run before `zincati.service` to avoid conflicting rpm-ostree
