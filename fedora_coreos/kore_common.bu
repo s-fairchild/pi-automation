@@ -24,7 +24,6 @@ passwd:
     - name: emby
     - name: pihole
 storage:
-  # TODO double check this before testing on hardware
   luks:
   - name: root
     label: luks-root
@@ -32,52 +31,6 @@ storage:
     clevis:
       tpm2: true
     wipe_volume: true
-  disks:
-    # - device: /dev/disk/by-id/wwn-0x5000c500c8e4bd14
-    - device: /dev/vdb
-      wipe_table: true
-      partitions:
-        - label: raid5.1
-          number: 1
-          size_mib: 0
-          start_mib: 0
-          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
-    # - device: /dev/disk/by-id/wwn-0x5000c500c937816a
-    - device: /dev/vdc
-      wipe_table: true
-      partitions:
-        - label: raid5.2
-          number: 1
-          size_mib: 0
-          start_mib: 0
-          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
-    # - device: /dev/disk/by-id/wwn-0x5000c500c8e196b3
-    - device: /dev/vdd
-      wipe_table: true
-      partitions:
-        - label: raid5.3
-          number: 1
-          size_mib: 0
-          start_mib: 0
-          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
-    # - device: /dev/disk/by-id/wwn-0x5000c500c8e37087
-    - device: /dev/vde
-      wipe_table: true
-      partitions:
-        - label: raid5.4
-          number: 1
-          size_mib: 0
-          start_mib: 0
-          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
-    # - device: /dev/disk/by-id/wwn-0x5000c500c8a40802
-    - device: /dev/vdf
-      wipe_table: true
-      partitions:
-        - label: raid5.5
-          number: 1
-          size_mib: 0
-          start_mib: 0
-          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
   raid:
     - name: data
       level: raid5
@@ -134,6 +87,7 @@ storage:
         name: emby
       group:
         name: emby
+    - path: /usr/local/etc/unbound
     - path: /var/data/emby/stuff
       user:
         name: emby
@@ -245,7 +199,14 @@ storage:
       contents:
         local: motion/camera3.conf
       mode: 0644
+    
+    - path: /usr/local/etc/unbound/unbound.conf
+      overwrite: true
+      contents:
+        local: unbound/unbound.conf
+      mode: 0644
 
+  # Required to use local dns server
   links:
     - path: /etc/resolv.conf
       overwrite: true
@@ -358,6 +319,33 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+    
+    - name: cleanup-motion-videos.service
+      enabled: false
+      contents: |
+        [Unit]
+        Wants=cleanup-motion-videos.timer
+
+        [Service]
+        Type=Oneshot
+        ExecStart=find /var/data/motion -name "*.mkv" -type f -mtime +30 -delete
+
+        [Install]
+        WantedBy=multi-user.target
+    
+    - name: cleanup-motion-videos.timer
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Delete motion video files older than 30 days
+        Requires=cleanup-motion-videos.service
+
+        [Timer]
+        Unit=cleanup-motion-videos.service
+        OnCalendar=*-*-* 00:00:00
+
+        [Install]
+        WantedBy=timers.target
 
     - name: systemd-resolved.service
       enabled: false
@@ -401,7 +389,6 @@ systemd:
   
     - name: v4l2rtspserver.service
       enabled: true
-      # TODO uncomment binds to when installing on hardware
       contents: |
         [Unit]
         Description=V4L2 RTSP Server
@@ -425,6 +412,28 @@ systemd:
             -R home -U user:"${SECRET}" \
             -C1 -A48000 -aS16_LE \
             -u dustins_room
+        [Install]
+
+        WantedBy=multi-user.target
+      
+    - name: unbound.service
+      enabled: true
+      contents: |
+        [Unit]        
+        Description=Unbound DNS Server
+        After=network.target
+
+        [Service]
+        Type=Simple
+        Restart=on-failure
+        RestartSec=30
+        ExecStartPre=-/bin/podman pull docker.io/mvance/unbound:latest
+        ExecStart=/bin/podman run --name unbound \
+            -p 5353:53/tcp \
+            -p 5353:53/udp \
+            --restart=unless-stopped \
+            docker.io/mvance/unbound:latest
+        
         [Install]
         WantedBy=multi-user.target
 

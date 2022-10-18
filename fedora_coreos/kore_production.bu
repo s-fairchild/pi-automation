@@ -1,0 +1,48 @@
+variant: fcos
+version: 1.4.0
+ignition:
+  config:
+    merge:
+      - local: ignitions/kore_common.ign
+storage:
+  disks:
+    - device: /dev/disk/by-id/wwn-0x5000c500c8e4bd14
+      wipe_table: true
+      partitions:
+        - label: raid5.1
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/disk/by-id/wwn-0x5000c500c937816a
+      wipe_table: true
+      partitions:
+        - label: raid5.2
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/disk/by-id/wwn-0x5000c500c8e196b3
+      wipe_table: true
+      partitions:
+        - label: raid5.3
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/disk/by-id/wwn-0x5000c500c8e37087
+      wipe_table: true
+      partitions:
+        - label: raid5.4
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/disk/by-id/wwn-0x5000c500c8a40802
+      wipe_table: true
+      partitions:
+        - label: raid5.5
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E

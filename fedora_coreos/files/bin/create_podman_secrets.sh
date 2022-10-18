@@ -1,6 +1,7 @@
 #!/bin/bash
 secrets=(
     v4l2rtspserver
+    v4l2rtspserver_url
     pihole
     motion_camera1
     motion_camera2

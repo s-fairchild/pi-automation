@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # IGNITION_CONFIG="$HOME/src/github/pi-automation/fedora_coreos/boss.ign"
 IGNITION_FILE="$1"
