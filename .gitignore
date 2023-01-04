@@ -1,10 +1,12 @@
 .vscode/
 fedora_coreos/files/container_secrets/*
 fedora_coreos/wireguard/*
-openvpn/*
-luks_keys/*
+fedora_coreos/files/wg/*
+fedora_coreos/files/luks_keys/*
+fedora_coreos/files/openvpn/*
 isos/*
 *.ign
 *.iso
+*.iso.sig
 *~
 fedora_coreos/files/graylog/*
