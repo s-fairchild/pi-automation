@@ -1,0 +1,68 @@
+variant: fcos
+version: 1.4.0
+ignition:
+  config:
+    merge:
+      - local: ignitions/kore_common.ign
+storage:
+  files:
+    - path: /etc/resolv.conf.local-dns
+      overwrite: true
+      contents:
+        inline: |
+          nameserver 10.50.0.1
+          nameserver 8.8.8.8
+          nameserver 8.8.4.4
+  disks:
+    - device: /dev/vdb
+      wipe_table: true
+      partitions:
+        - label: raid10.1
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/vdc
+      wipe_table: true
+      partitions:
+        - label: raid10.2
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/vdd
+      wipe_table: true
+      partitions:
+        - label: raid10.3
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/vde
+      wipe_table: true
+      partitions:
+        - label: raid10.4
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+    - device: /dev/vdf
+      wipe_table: true
+      partitions:
+        - label: backups
+          number: 1
+          size_mib: 0
+          start_mib: 0
+          type_guid: A19D880F-05FC-4D3B-A006-743F0F84911E
+systemd:
+  units:
+    - name: serial-getty@ttyS0.service
+      dropins:
+      - name: autologin-core.conf
+        contents: |
+          [Service]
+          # Override Execstart in main unit
+          ExecStart=
+          # Add new Execstart with `-` prefix to ignore failure
+          ExecStart=-/usr/sbin/agetty --autologin core --noclear %I $TERM
+          TTYVTDisallocate=no

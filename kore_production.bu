@@ -1,0 +1,15 @@
+variant: fcos
+version: 1.4.0
+ignition:
+  config:
+    merge:
+      - local: ignitions/kore_common.ign
+      - local: ignitions/kore_btrfs_raid10.ign
+      # - local: ignitions/kore_md_raid5.ign
+storage:
+  filesystems:
+    - device: /dev/disk/by-partlabel/root
+      format: xfs
+      label: root
+      wipe_filesystem: false
+      uuid: 910678ff-f77e-4a7d-8d53-86f2ac47a823
