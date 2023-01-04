@@ -130,34 +130,52 @@ storage:
       overwrite: true
       contents:
         local: container_secrets/v4l2rtspserver
-    - path: /var/container_secrets/v4l2rtspserver_url
+
+    - path: /var/container_secrets/v4l2rtspserver_camera1_url
       overwrite: true
       contents:
-        local: container_secrets/v4l2rtspserver_url
+        local: container_secrets/v4l2rtspserver_camera1_url
+
+    - path: /var/container_secrets/v4l2rtspserver_camera2_url
+      overwrite: true
+      contents:
+        local: container_secrets/v4l2rtspserver_camera2_url
+
+    - path: /var/container_secrets/v4l2rtspserver_camera3_url
+      overwrite: true
+      contents:
+        local: container_secrets/v4l2rtspserver_camera3_url
+
     - path: /var/container_secrets/pihole
       overwrite: true
       contents:
         local: container_secrets/pihole
+
     - path: /var/container_secrets/motion_camera1
       overwrite: true
       contents:
         local: container_secrets/motion_camera1
+
     - path: /var/container_secrets/motion_camera2
       overwrite: true
       contents:
         local: container_secrets/motion_camera2
+
     - path: /var/container_secrets/motion_camera3
       overwrite: true
       contents:
         local: container_secrets/motion_camera3
+
     - path: /var/container_secrets/plex
       overwrite: true
       contents:
         local: container_secrets/plex
+
     - path: /var/container_secrets/graylog
       overwrite: true
       contents:
         local: container_secrets/graylog
+
     - path: /var/container_secrets/graylog_root_password_sha2
       overwrite: true
       contents:
@@ -680,12 +698,16 @@ systemd:
         RestartSec=30
         Restart=on-failure
         ExecStartPre=-/bin/podman pull docker.io/bash:5.2.2
+
         ExecStartPre=/bin/podman run --rm \
             --name motion-config-editor \
             --pull newer \
             --secret motion_camera1,type=env \
             --secret motion_camera2,type=env \
             --secret motion_camera3,type=env \
+            --secret v4l2rtspserver_camera1_url,type=env \
+            --secret v4l2rtspserver_camera2_url,type=env \
+            --secret v4l2rtspserver_camera3_url,type=env \
             --device /dev/dri:/dev/dri \
             -v /var/usrlocal/etc/motion:/mnt/motion:Z \
             -v motion_config:/mnt/temp_config \

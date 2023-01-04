@@ -9,6 +9,9 @@ secrets=(
     plex
     graylog_root_password_sha2
     graylog
+    v4l2rtspserver_camera1_url
+    v4l2rtspserver_camera2_url
+    v4l2rtspserver_camera3_url
 )
 secret_dir=/var/container_secrets
 
@@ -18,7 +21,8 @@ for s in ${secrets[@]}; do
         if podman secret create "$s" "$ds"; then
             shred -zu "$ds"
         else
-        exit 1
+            echo "$ds not found, exiting..."
+            exit 1
         fi
     fi
 done

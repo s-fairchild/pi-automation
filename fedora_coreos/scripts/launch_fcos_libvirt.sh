@@ -1,13 +1,9 @@
 #!/bin/bash -x
 
 IGNITION_CONFIG="${HOME}/src/github/pi-automation/fedora_coreos/kore_libvirt.ign"
-IGNITION_FILE="${1}"
-IGNITION_CONFIG="/var/lib/libvirt/filesystems/${IGNITION_FILE}"
-if [ -n "$2" ]; then
-    IMAGE="${2}"
-else
-    IMAGE="/var/lib/libvirt/images/pool/fedora-coreos-37.20221106.3.0-qemu.x86_64.qcow2"
-fi
+IGNITION_FILE="${1:?Ignition file must be provided}"
+IGNITION_CONFIG="/var/lib/libvirt/filesystems/$(basename ${IGNITION_FILE})"
+IMAGE="${2:-/var/lib/libvirt/images/pool/fedora-coreos-37.20221106.3.0-qemu.x86_64.qcow2}"
 VM_NAME="fcos-test-01"
 VCPUS="4"
 RAM_MB="4096"

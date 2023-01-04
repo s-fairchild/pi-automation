@@ -51,7 +51,7 @@ Deploy a self hosted Fedora CoreOS server to serve as
 1. Test in libvirt vm
   * Testing configuration in a libvirt vm
   ```bash
-  make libvirt
+  make start-libvirt
   ```
 1. Deploy to bare metal with iso
   * Production bare metal iso creation
