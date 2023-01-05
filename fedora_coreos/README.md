@@ -46,6 +46,12 @@ Deploy a self hosted Fedora CoreOS server to serve as
 1. `scripts/`
   * Directory contains helper scripts for deploying/testing
 
+#### Required Files and Directories not in source control
+1. `fedora_coreos/files/container_secrets`
+  * Contains podman secret files.<br>
+    These are loaded into the ignition, `create_podman_secrets.sh` runs on first boot creating the podman secrets.<br>
+    Once the secrets are created the files are shredded.<br>
+
 ### How to use this repository
 
 1. Test in libvirt vm
