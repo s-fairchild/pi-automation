@@ -98,12 +98,12 @@ storage:
       group:
         name: backups
       mode: 0770
-    - path: /var/container_secrets
-      user:
-        name: root
-      group:
-        name: root
-      mode: 0700
+    # - path: /var/container_secrets
+    #   user:
+    #     name: root
+    #   group:
+    #     name: root
+    #   mode: 0700
 
   files:
     # System config
@@ -125,61 +125,67 @@ storage:
         inline: |
           # This config file enables a /dev/zram0 device with the default settings
           [zram0]
-
-    - path: /var/container_secrets/v4l2rtspserver
+    
+    - path: /var/container_secrets
       overwrite: true
       contents:
-        local: container_secrets/v4l2rtspserver
+        local: container_secrets.tar.gz
+        compression: gzip
 
-    - path: /var/container_secrets/v4l2rtspserver_camera1_url
-      overwrite: true
-      contents:
-        local: container_secrets/v4l2rtspserver_camera1_url
+    # - path: /var/container_secrets/v4l2rtspserver
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/v4l2rtspserver
 
-    - path: /var/container_secrets/v4l2rtspserver_camera2_url
-      overwrite: true
-      contents:
-        local: container_secrets/v4l2rtspserver_camera2_url
+    # - path: /var/container_secrets/v4l2rtspserver_camera1_url
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/v4l2rtspserver_camera1_url
 
-    - path: /var/container_secrets/v4l2rtspserver_camera3_url
-      overwrite: true
-      contents:
-        local: container_secrets/v4l2rtspserver_camera3_url
+    # - path: /var/container_secrets/v4l2rtspserver_camera2_url
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/v4l2rtspserver_camera2_url
 
-    - path: /var/container_secrets/pihole
-      overwrite: true
-      contents:
-        local: container_secrets/pihole
+    # - path: /var/container_secrets/v4l2rtspserver_camera3_url
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/v4l2rtspserver_camera3_url
 
-    - path: /var/container_secrets/motion_camera1
-      overwrite: true
-      contents:
-        local: container_secrets/motion_camera1
+    # - path: /var/container_secrets/pihole
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/pihole
 
-    - path: /var/container_secrets/motion_camera2
-      overwrite: true
-      contents:
-        local: container_secrets/motion_camera2
+    # - path: /var/container_secrets/motion_camera1
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/motion_camera1
 
-    - path: /var/container_secrets/motion_camera3
-      overwrite: true
-      contents:
-        local: container_secrets/motion_camera3
+    # - path: /var/container_secrets/motion_camera2
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/motion_camera2
 
-    - path: /var/container_secrets/plex
-      overwrite: true
-      contents:
-        local: container_secrets/plex
+    # - path: /var/container_secrets/motion_camera3
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/motion_camera3
 
-    - path: /var/container_secrets/graylog
-      overwrite: true
-      contents:
-        local: container_secrets/graylog
+    # - path: /var/container_secrets/plex
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/plex
 
-    - path: /var/container_secrets/graylog_root_password_sha2
-      overwrite: true
-      contents:
-        local: container_secrets/graylog_root_password_sha2
+    # - path: /var/container_secrets/graylog
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/graylog
+
+    # - path: /var/container_secrets/graylog_root_password_sha2
+    #   overwrite: true
+    #   contents:
+    #     local: container_secrets/graylog_root_password_sha2
 
     # Used by podman-secrets.service
     - path: /usr/local/bin/create_podman_secrets.sh
@@ -254,11 +260,6 @@ storage:
       contents:
         local: unbound/unbound.conf
       mode: 0644
-    
-    - path: /etc/wireguard/wg0.conf
-      mode: 0600
-      contents:
-        local: wg/wg0.conf
     
     - path: /usr/local/etc/graylog/.env
       mode: 0600
@@ -571,17 +572,6 @@ storage:
 
           verb 4
 
-  # Required to use local dns server
-  # links:
-  #   - path: /etc/resolv.conf
-  #     overwrite: true
-  #     user:
-  #       id: 0
-  #     group:
-  #       id:
-  #         0
-  #     target: /etc/resolv.conf.local-dns
-
 systemd:
   units:
     - name: podman-secrets.service
@@ -593,7 +583,8 @@ systemd:
         Wants=network-online.target
 
         [Service]
-        Type=oneshot
+        WorkingDirectory=/tmp
+        Type=simple
         ExecStart=/usr/local/bin/create_podman_secrets.sh
 
         [Install]
@@ -605,6 +596,7 @@ systemd:
         [Unit]
         Description=Plex Media Server
         After=network-online.target
+        After=podman-secrets.service
         Wants=network-online.target
 
         # https://support.plex.tv/articles/201543147-what-network-ports-do-i-need-to-allow-through-my-firewall/
@@ -690,6 +682,7 @@ systemd:
         [Unit]
         Description=Motion Video Server
         After=network-online.target
+        After=podman-secrets.service
         Wants=network-online.target
 
         [Service]
@@ -762,6 +755,7 @@ systemd:
         [Unit]
         Description=Pihole DNS Server
         After=network-online.target
+        After=podman-secrets.service
         Wants=network-online.target
 
         [Service]
@@ -803,6 +797,7 @@ systemd:
         [Unit]        
         Description=Unbound DNS Server
         After=network.target
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -825,8 +820,10 @@ systemd:
         [Unit]
         Description=V4L2 RTSP Server
         After=network.target
+        Wants=network-online.target
         BindsTo=sys-devices-pci0000:00-0000:00:14.0-usb1-1\x2d2-1\x2d2.3-1\x2d2.3:1.0-video4linux-video0.device
         After=sys-devices-pci0000:00-0000:00:14.0-usb1-1\x2d2-1\x2d2.3-1\x2d2.3:1.0-video4linux-video0.device
+        After=podman-secrets.service
 
         [Service]
         Type=simple
@@ -859,6 +856,8 @@ systemd:
       enabled: false
       contents: |
         [Unit]
+        After=network.target
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -880,8 +879,10 @@ systemd:
       contents: |
         [Unit]
         After=network.target
+        Wants=network-online.target
         After=mongodb.service
         After=elasticsearch.service
+        After=podman-secrets.service
 
         [Service]
         Type=simple
@@ -928,6 +929,7 @@ systemd:
         [Unit]
         After=network.target
         Before=graylog.service
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -953,6 +955,7 @@ systemd:
         [Unit]
         After=network.target
         Before=graylog.service
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -984,6 +987,7 @@ systemd:
       contents: |
         [Unit]
         After=network.target
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -1013,6 +1017,7 @@ systemd:
       contents: |
         [Unit]
         After=network.target
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -1038,6 +1043,7 @@ systemd:
       contents: |
         [Unit]
         After=network.target
+        Wants=network-online.target
 
         [Service]
         Type=simple
@@ -1064,8 +1070,6 @@ systemd:
         [Install]
         WantedBy=multi-user.target
 
-    - name: wg-quick@wg0.service
-      enabled: false
     - name: openvpn-server@serverudp.service
       enabled: true
     - name: openvpn-server@servertcp.service

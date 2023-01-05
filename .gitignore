@@ -1,5 +1,6 @@
 .vscode/
 *.secret
+*.tar.gz
 *.crt
 *.pem
 *.key
