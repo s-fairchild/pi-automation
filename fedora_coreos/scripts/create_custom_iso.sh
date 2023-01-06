@@ -5,6 +5,10 @@
 set -o errexit -o nounset
 
 main() {
+    if [[ ! -d isos/ ]]; then
+        mkdir isos/ || abort "failed to create isos/ directory"
+    fi
+
     ORIG_ISO="${ORIG_ISO:?ISO File must be provided with -i. Use ./${0} -h for usage information.}"
     DEST_DEVICE="${DEST_DEVICE:?Destination device must be provided with -d. Use ./${0} -h for usage information.}"
     NEW_ISO="isos/custom_$(date +%F)_${ORIG_ISO}"
