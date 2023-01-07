@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # Creates Fedora CoreOS live installer image with embedded ignition file
 
@@ -7,6 +7,11 @@ set -o errexit -o nounset
 main() {
     if [[ ! -d isos/ ]]; then
         mkdir isos/ || abort "failed to create isos/ directory"
+    fi
+
+    if [[ ${DOWNLOAD_ISO:-false} == "true" ]]; then
+        download_latest_iso "${DOWNLOAD_LOCATION:-./}"
+        exit 0
     fi
 
     ORIG_ISO="${ORIG_ISO:?ISO File must be provided with -i. Use ./${0} -h for usage information.}"
@@ -70,11 +75,17 @@ check_remove_iso() {
 # may add an option to specify downloading the latest ISO image
 #######################################
 download_latest_iso() {
+    local dest="${1:-./}"
+    if [[ ! -d "$dest" ]]; then
+        echo "$dest not found"
+        DOWNLOAD_LOCATION="./"
+    fi
+
     podman run --security-opt \
         label=disable \
-        --pull=always \
+        --pull=newer \
         --rm \
-        -v .:/data \
+        -v "${dest}":/data \
         -w /data \
         quay.io/coreos/coreos-installer:release download -s stable -p metal -f iso
 }
@@ -98,6 +109,7 @@ usage() {
 ARGS:
     -i          ISO file downloaded with coreos-installer
     -d          Destination device file name to install Fedora CoreOS to when booting custom ISO image
+    -g          Download the latest ISO image
     -h          This help message
 
 EXAMPLES:
@@ -106,7 +118,7 @@ EXAMPLES:
     exit "${1:-0}"
 }
 
-while getopts "i:d:h" o; do
+while getopts ":g:i:d:h" o; do
     case "${o}" in
     i)
         ORIG_ISO="${OPTARG}"
@@ -114,8 +126,19 @@ while getopts "i:d:h" o; do
     d)
         DEST_DEVICE="${OPTARG}"
         ;;
+    g)
+        DOWNLOAD_ISO="true"
+        DOWNLOAD_LOCATION="${OPTARG}"
+        ;;
     h)
         usage
+        ;;
+    :)
+        case "${OPTARG}" in
+        g)
+            DOWNLOAD_ISO="true"
+        ;;
+        esac
         ;;
     *)
         usage 1
@@ -128,3 +151,5 @@ if [[ -z $* ]]; then
 fi
 
 main
+
+exit 0
