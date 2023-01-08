@@ -7,8 +7,11 @@ common:
 libvirt: common
 	butane -s -d files/ -p kore_libvirt.bu > files/ignitions/kore_libvirt.ign
 
-start-libvirt: libvirt
-	./scripts/launch_fcos_libvirt.sh files/ignitions/kore_libvirt.ign
+libvirt-update:
+	sudo coreos-installer download -s stable -p qemu -f qcow2.xz --decompress -C /var/lib/libvirt/images/pool/
+
+libvirt-start: libvirt
+	./scripts/launch_fcos_libvirt.sh -f files/ignitions/kore_libvirt.ign
 
 production: common
 	# butane -s -d files/ -p kore_md_raid5.bu > files/ignitions/kore_md_raid5.ign && \

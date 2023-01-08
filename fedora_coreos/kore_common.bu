@@ -44,66 +44,82 @@ passwd:
       system: true
 storage:
   directories:
+    - path: /usr/local/share/motionplus
+      user:
+        name: root
+      group:
+        name: root
+
     - path: /var/data/motion
       user: 
         name: motion
       group: 
         name: cctv
-    - path: /var/data/motion/frontdoor
+
+    - path: /var/data/motionplus/frontdoor
       user: 
         name: motion
       group: 
         name: cctv
-    - path: /var/data/motion/dustins_room
+
+    - path: /var/data/motionplus/bedroom1
       user: 
         name: motion
       group: 
         name: cctv
-    - path: /var/data/motion/driveway
+
+    - path: /var/data/motionplus/driveway
       user: 
         name: motion
       group: 
         name: cctv
+
     - path: /var/data/emby
       user:
         name: emby
       group:
         name: movies
+
     - path: /var/data/plex
       user:
         name: plex
       group:
         name: movies
+
     - path: /var/data/emby/Movies
       user:
         name: emby
       group:
         name: movies
       mode: 0770
+
     - path: /var/data/emby/TV
       user:
         name: emby
       group:
         name: movies
       mode: 0770
+
     - path: /var/data/emby/Mixed
       user:
         name: emby
       group:
         name: movies
       mode: 0770
+
     - path: /var/data/deja/r10
       user:
-        name: deja
+        name: steven
       group:
-        name: backups
-      mode: 0770
-    # - path: /var/container_secrets
-    #   user:
-    #     name: root
-    #   group:
-    #     name: root
-    #   mode: 0700
+        name: steven
+      mode: 0700
+
+    - path: /var/data/deja/g15
+      user:
+        name: steven
+      group:
+        name: steven
+      mode: 0700
 
   files:
     # System config
@@ -126,66 +142,17 @@ storage:
           # This config file enables a /dev/zram0 device with the default settings
           [zram0]
     
-    - path: /var/container_secrets
+    - path: /var/container_secrets.tar
       overwrite: true
       contents:
         local: container_secrets.tar.gz
         compression: gzip
-
-    # - path: /var/container_secrets/v4l2rtspserver
+    
+    # TODO move motion-build process into shell script to push to remote docker repo
+    # - path: /usr/local/share/motionplus/Containerfile
     #   overwrite: true
     #   contents:
-    #     local: container_secrets/v4l2rtspserver
-
-    # - path: /var/container_secrets/v4l2rtspserver_camera1_url
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/v4l2rtspserver_camera1_url
-
-    # - path: /var/container_secrets/v4l2rtspserver_camera2_url
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/v4l2rtspserver_camera2_url
-
-    # - path: /var/container_secrets/v4l2rtspserver_camera3_url
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/v4l2rtspserver_camera3_url
-
-    # - path: /var/container_secrets/pihole
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/pihole
-
-    # - path: /var/container_secrets/motion_camera1
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/motion_camera1
-
-    # - path: /var/container_secrets/motion_camera2
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/motion_camera2
-
-    # - path: /var/container_secrets/motion_camera3
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/motion_camera3
-
-    # - path: /var/container_secrets/plex
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/plex
-
-    # - path: /var/container_secrets/graylog
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/graylog
-
-    # - path: /var/container_secrets/graylog_root_password_sha2
-    #   overwrite: true
-    #   contents:
-    #     local: container_secrets/graylog_root_password_sha2
+    #     local: Containerfile-motionplus
 
     # Used by podman-secrets.service
     - path: /usr/local/bin/create_podman_secrets.sh
@@ -231,28 +198,28 @@ storage:
           export EDITOR=vim
 
     # App configs
-    - path: /usr/local/etc/motion/motion.conf
+    - path: /usr/local/etc/motionplus/motionplus.conf
       overwrite: true
       contents:
-        local: motion/motion.conf
+        local: motionplus/motionplus.conf
       mode: 0644
 
-    - path: /usr/local/etc/motion/camera1.conf
+    - path: /usr/local/etc/motionplus/camera1.conf
       overwrite: true
       contents:
-        local: motion/camera1.conf
+        local: motionplus/camera1.conf
       mode: 0644
 
-    - path: /usr/local/etc/motion/camera2.conf
+    - path: /usr/local/etc/motionplus/camera2.conf
       overwrite: true
       contents:
-        local: motion/camera2.conf
+        local: motionplus/camera2.conf
       mode: 0644
 
-    - path: /usr/local/etc/motion/camera3.conf
+    - path: /usr/local/etc/motionplus/camera3.conf
       overwrite: true
       contents:
-        local: motion/camera3.conf
+        local: motionplus/camera3.conf
       mode: 0644
     
     - path: /usr/local/etc/unbound/unbound.conf
@@ -581,6 +548,10 @@ systemd:
         Description=Create podman secrets
         After=network-online.target
         Wants=network-online.target
+        Before=motionplus.service
+        Before=v4l2rtspserver.service
+        Before=pihole.service
+        Before=graylog.service
 
         [Service]
         WorkingDirectory=/tmp
@@ -676,7 +647,27 @@ systemd:
         [Install]
         WantedBy=multi-user.target
     
-    - name: motion.service
+    # - name: motionplus-build.service
+    #   enabled: true
+    #   contents: |
+    #     [Unit]
+    #     Description=Motion Video Server
+    #     After=network-online.target
+    #     Wants=network-online.target
+    #     Before=motionplus.service
+
+    #     [Service]
+    #     Type=simple
+    #     TimeoutStartSec=0
+    #     RestartSec=30
+    #     Restart=on-failure
+    #     WorkingDirectory=/usr/local/share/motionplus
+    #     ExecStart=/bin/podman build --tag localhost/motionproject/motionplus:latest .
+
+    #     [Install]
+    #     WantedBy=multi-user.target
+    
+    - name: motionplus.service
       enabled: true
       contents: |
         [Unit]
@@ -693,6 +684,7 @@ systemd:
         ExecStartPre=-/bin/podman pull docker.io/bash:5.2.2
 
         ExecStartPre=/bin/podman run --rm \
+            --rm \
             --name motion-config-editor \
             --pull newer \
             --secret motion_camera1,type=env \
@@ -702,26 +694,26 @@ systemd:
             --secret v4l2rtspserver_camera2_url,type=env \
             --secret v4l2rtspserver_camera3_url,type=env \
             --device /dev/dri:/dev/dri \
-            -v /var/usrlocal/etc/motion:/mnt/motion:Z \
-            -v motion_config:/mnt/temp_config \
+            -v /var/usrlocal/etc/motionplus:/mnt/motion:Z \
+            -v motionplus:/mnt/temp_config \
             -v /var/usrlocal/bin/motion_config_editor.sh:/bin/motion_config_editor.sh:Z \
             docker.io/bash:5.2.2 bash /bin/motion_config_editor.sh
 
-        ExecStartPre=-/bin/podman pull docker.io/motionproject/motion:latest
-        ExecStartPre=-/bin/podman kill motion
-        ExecStartPre=-/bin/podman rm motion
+        ExecStartPre=-/bin/podman kill motionplus
+        ExecStartPre=-/bin/podman rm motionplus
+        ExecStartPre=-/bin/podman pull docker.io/steve51516/motionplus:latest
         ExecStart=/bin/podman run \
-            --name motion \
+            --name motionplus \
             -e TZ="America/New_York" \
-            -v motion_config:/usr/local/etc/motion \
-            -v /var/data/motion:/var/lib/motion:Z \
-            docker.io/motionproject/motion:latest
-        ExecStop=/bin/podman stop motion
-        ExecStopPost=/bin/podman volume rm motion_config
+            -v motionplus:/usr/local/etc/motionplus \
+            -v /var/data/motionplus:/var/lib/motionplus:Z \
+            docker.io/steve51516/motionplus:latest
+        ExecStop=/bin/podman stop motionplus
+        ExecStopPost=/bin/podman volume rm motionplus
 
         [Install]
         WantedBy=multi-user.target
-    
+
     - name: cleanup-motion-videos.service
       enabled: false
       contents: |
